@@ -1,4 +1,6 @@
 use std::fmt;
+use std::iter::Iterator;
+use std::slice::Iter;
 
 use xml::attribute::OwnedAttribute;
 use xml::name::OwnedName;
@@ -14,7 +16,7 @@ pub struct Element {
     pub name: OwnedName,
     pub attributes: Vec<OwnedAttribute>,
     pub namespace: Namespace,
-    pub children: Vec<Box<Node>>,
+    children: Vec<Box<Node>>,
 }
 
 impl Element {
@@ -32,6 +34,11 @@ impl Element {
     /// Add a child to this element's children list.
     pub fn add_child(&mut self, child: Node) {
         self.children.push(Box::new(child));
+    }
+
+    /// Return the number of child nodes.
+    pub fn len(&self) -> usize {
+        self.children.len()
     }
 
     /// Find children by name.
@@ -62,6 +69,11 @@ impl Element {
             }
         }
         buff
+    }
+
+    /// Create an iterator that only yields Node::Element node types.
+    pub fn iter_elements(&self) -> ElementIterator {
+        ElementIterator { source: Box::new(self.children.iter()) }
     }
 
     /// Print this element in a pretty way.
@@ -103,6 +115,33 @@ impl fmt::Display for Element {
     }
 
 }
+
+pub struct ElementIterator<'a> {
+    source: Box<Iter<'a, Box<Node>>>,
+}
+
+impl<'a> Iterator for ElementIterator<'a> {
+
+    type Item = &'a Element;
+
+    fn next(&mut self) -> Option<&'a Element> {
+        loop {
+            let it = self.source.next();
+            match it {
+                None => return None,
+                Some(node) => {
+                    match **node {
+                        Node::Text(_) => continue,
+                        Node::Element(ref elem) => return Some(elem),
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+
 
 /// Node of the tree.
 /// A node can be a Text node or an Element node.
@@ -147,7 +186,7 @@ mod tests {
 
     use std::old_io::{Buffer, MemReader};
 
-    use {build, Document};
+    use {build, Document, Element, ElementIterator};
 
     use xml::EventReader;
 
@@ -179,6 +218,18 @@ mod tests {
         let doc = xml_to_doc(xml);
 
         assert_eq!(doc.root.text(), "abcdef");
+    }
+
+    #[test]
+    fn test_iter_elements() {
+        let xml = "<root>abc<sep></sep>def<oy></oy></root>";
+        let doc = xml_to_doc(xml);
+
+        let it: ElementIterator = doc.root.iter_elements();
+        let v: Vec<&Element> = it.collect();
+
+        assert_eq!(doc.root.len(), 4);
+        assert_eq!(v.len(), 2);
     }
 
 }

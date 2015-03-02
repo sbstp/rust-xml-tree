@@ -3,7 +3,7 @@
 extern crate xml;
 
 pub use builder::build;
-pub use dom::{Document, Element, Node};
+pub use dom::{Document, Element, ElementIterator, Node};
 pub use error::BuildError;
 
 pub use xml::EventReader;
