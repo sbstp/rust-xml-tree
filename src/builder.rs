@@ -7,6 +7,7 @@ use xml::reader::EventReader;
 use xml::reader::Events;
 use xml::reader::events::XmlEvent;
 
+/// Produce a Document from an EventReader.
 pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildError> {
     let mut it = reader.events();
 
@@ -16,12 +17,13 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
             None => return Err(BuildError::BuildError),
             Some(event) => {
                 match event {
+                    // Found the root element.
                     XmlEvent::StartElement { name, attributes, namespace } => {
                         let mut parent = Element::new(name, attributes, namespace);
                         try!(build_rec(&mut it, &mut parent));
-                        //println!("{:?}", Node::Element(parent));
                         return Ok(Document{root: parent});
                     }
+                    // Ignore other events.
                     _ => continue,
                 }
             }
@@ -29,29 +31,30 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
     }
 }
 
+// Build the tree in a recursive manner.
 fn build_rec<B: Buffer>(it: &mut Events<B>, parent: &mut Element) -> Result<(), BuildError> {
     loop {
         match it.next() {
             None => return Err(BuildError::BuildError),
             Some(event) => {
                 match event {
-                    // START OF CHILD
+                    // Start of new child.
                     XmlEvent::StartElement { name, attributes, namespace } => {
-                        //println!("START {}", name.borrow().local_name);
                         let mut elem = Element::new(name, attributes, namespace);
                         try!(build_rec(it, &mut elem));
                         parent.add_child(Node::Element(elem));
                     }
-                    // END OF PARENT
+                    // End of parent.
                     XmlEvent::EndElement { name: _ } => {
-                        //println!("END {}", name.borrow().local_name);
                         return Ok(());
                     }
+                    // Text nodes.
                     XmlEvent::Characters(text) | XmlEvent::CData(text) => {
-                        //println!("TEXT {}", text);
                         parent.add_child(Node::Text(text));
                     }
+                    //
                     XmlEvent::Error(err) => return Err(BuildError::ParserError(err)),
+                    // Ignore other events.
                     _ => {}
                 }
             }
