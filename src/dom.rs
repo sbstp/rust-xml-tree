@@ -43,18 +43,7 @@ impl Element {
 
     /// Find children by name.
     pub fn find<'a>(&'a self, name: &str) -> Vec<&'a Element> {
-        let mut matches: Vec<&'a Element> = Vec::new();
-        for child in self.children.iter() {
-            match **child {
-                Node::Element(ref elem) => {
-                    if elem.name.borrow().local_name == name {
-                        matches.push(elem);
-                    }
-                }
-                _ => continue,
-            }
-        }
-        matches
+        self.iter_elements().filter(|&elem| elem.name.borrow().local_name == name).collect()
     }
 
     /// Get the text nodes of this Element concatenated.
@@ -197,7 +186,7 @@ mod tests {
 
     #[test]
     fn test_find() {
-        let xml = "<root><item>aa</item><item>bb</item><item>cc</item></root>";
+        let xml = "<root><item>aa</item><item>bb</item><item>cc</item><notitem></notitem></root>";
         let doc = xml_to_doc(xml);
 
         let elems = doc.root.find("item");
