@@ -48,21 +48,21 @@ impl Element {
 
     /// Get the text nodes of this Element concatenated.
     pub fn text(&self) -> String {
-        let mut buff = String::new();
-        for child in self.children.iter() {
-            match **child {
-                Node::Text(ref text) => {
-                    buff.push_str(text);
-                }
-                _ => continue,
-            }
+        let mut buf = String::new();
+        for text in self.iter_text() {
+            buf.push_str(text);
         }
-        buff
+        buf
     }
 
     /// Create an iterator that only yields Node::Element node types.
     pub fn iter_elements(&self) -> ElementIterator {
         ElementIterator { source: Box::new(self.children.iter()) }
+    }
+
+    // Create an iterator that only yields Node::Text node types.
+    pub fn iter_text(&self) -> TextIterator {
+        TextIterator { source: Box::new(self.children.iter()) }
     }
 
     /// Print this element in a pretty way.
@@ -105,6 +105,7 @@ impl fmt::Display for Element {
 
 }
 
+/// Iterator for element nodes.
 pub struct ElementIterator<'a> {
     source: Box<Iter<'a, Box<Node>>>,
 }
@@ -130,6 +131,31 @@ impl<'a> Iterator for ElementIterator<'a> {
 
 }
 
+/// Iterator for text nodes.
+pub struct TextIterator<'a> {
+    source: Box<Iter<'a, Box<Node>>>,
+}
+
+impl<'a> Iterator for TextIterator<'a> {
+
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<&'a str> {
+        loop {
+            let it = self.source.next();
+            match it {
+                None => return None,
+                Some(node) => {
+                    match **node {
+                        Node::Element(_) => continue,
+                        Node::Text(ref text) => return Some(text.as_slice()),
+                    }
+                }
+            }
+        }
+    }
+
+}
 
 
 /// Node of the tree.
@@ -216,6 +242,18 @@ mod tests {
 
         let it: ElementIterator = doc.root.iter_elements();
         let v: Vec<&Element> = it.collect();
+
+        assert_eq!(doc.root.len(), 4);
+        assert_eq!(v.len(), 2);
+    }
+
+    #[test]
+    fn test_iter_text() {
+        let xml = "<root>abc<sep></sep>def<oy></oy></root>";
+        let doc = xml_to_doc(xml);
+
+        let it = doc.root.iter_text();
+        let v: Vec<&str> = it.collect();
 
         assert_eq!(doc.root.len(), 4);
         assert_eq!(v.len(), 2);
