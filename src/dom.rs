@@ -34,6 +34,36 @@ impl Element {
         self.children.push(Box::new(child));
     }
 
+    /// Find children by name.
+    pub fn find<'a>(&'a self, name: &str) -> Vec<&'a Element> {
+        let mut matches: Vec<&'a Element> = Vec::new();
+        for child in self.children.iter() {
+            match **child {
+                Node::Element(ref elem) => {
+                    if elem.name.borrow().local_name == name {
+                        matches.push(elem);
+                    }
+                }
+                _ => continue,
+            }
+        }
+        matches
+    }
+
+    /// Get the text nodes of this Element concatenated.
+    pub fn text(&self) -> String {
+        let mut buff = String::new();
+        for child in self.children.iter() {
+            match **child {
+                Node::Text(ref text) => {
+                    buff.push_str(text);
+                }
+                _ => continue,
+            }
+        }
+        buff
+    }
+
     /// Print this element in a pretty way.
     fn pretty_indent(&self, f: &mut fmt::Formatter, indent: &str) -> fmt::Result {
         let name = self.name.borrow().local_name;
@@ -108,6 +138,47 @@ impl fmt::Display for Node {
             Node::Text(ref text) => write!(f, "{}", text),
             Node::Element(ref elem) => elem.fmt(f),
         }
+    }
+
+}
+
+#[cfg(test)]
+mod tests {
+
+    use std::old_io::{Buffer, MemReader};
+
+    use {build, Document};
+
+    use xml::EventReader;
+
+    fn xml_to_doc(text: &str) -> Document {
+        let mut reader = EventReader::new(MemReader::new(text.as_bytes().to_vec()));
+        build(&mut reader).ok().unwrap()
+    }
+
+    #[test]
+    fn test_find() {
+        let xml = "<root><item>aa</item><item>bb</item><item>cc</item></root>";
+        let doc = xml_to_doc(xml);
+
+        let elems = doc.root.find("item");
+        assert_eq!(elems.len(), 3);
+    }
+
+    #[test]
+    fn test_text_simple() {
+        let xml = "<root>abc</root>";
+        let doc = xml_to_doc(xml);
+
+        assert_eq!(doc.root.text(), "abc");
+    }
+
+    #[test]
+    fn test_test_complex() {
+        let xml = "<root>abc<sep></sep>def</root>";
+        let doc = xml_to_doc(xml);
+
+        assert_eq!(doc.root.text(), "abcdef");
     }
 
 }
