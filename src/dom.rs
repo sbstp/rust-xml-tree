@@ -3,11 +3,17 @@ use std::iter::Iterator;
 use std::slice::Iter;
 
 use xml::attribute::OwnedAttribute;
+use xml::common::XmlVersion;
 use xml::name::OwnedName;
 use xml::namespace::Namespace;
 
 /// Describes an XML Document.
 pub struct Document {
+    // document version
+    pub version: Option<XmlVersion>,
+    // document encoding
+    pub encoding: Option<String>,
+    // root element
     pub root: Element,
 }
 
@@ -204,10 +210,15 @@ mod tests {
     use {build, Document, Element, ElementIterator};
 
     use xml::EventReader;
+    use xml::common::XmlVersion;
 
     fn xml_to_doc(text: &str) -> Document {
         let mut reader = EventReader::new(MemReader::new(text.as_bytes().to_vec()));
-        build(&mut reader).ok().unwrap()
+        let res = build(&mut reader);
+        match res {
+            Ok(doc) => doc,
+            Err(err) => panic!("Error: {}", err),
+        }
     }
 
     #[test]
@@ -257,6 +268,15 @@ mod tests {
 
         assert_eq!(doc.root.len(), 4);
         assert_eq!(v.len(), 2);
+    }
+
+    #[test]
+    fn test_version_encoding() {
+        let xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><item></item></root>";
+        let doc = xml_to_doc(xml);
+
+        assert!(doc.version == Some(XmlVersion::Version10));
+        assert_eq!(doc.encoding, Some("UTF-8".to_string()));
     }
 
 }
