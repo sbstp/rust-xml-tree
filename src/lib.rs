@@ -1,10 +1,9 @@
-#![feature(collections, core, old_io)]
+#![feature(old_io, alloc)]
 
 extern crate xml;
 
 pub use builder::build;
-pub use dom::{Document, Element, ElementIterator, Node};
-pub use error::BuildError;
+pub use dom::{Document, RcNode, RcElement};
 
 pub use xml::EventReader;
 pub use xml::attribute::OwnedAttribute;
