@@ -3,7 +3,13 @@
 extern crate xml;
 
 pub use builder::build;
-pub use dom::{Document, Element, RcNode, RcElement};
+pub use dom::{
+    Document,
+    Element, ElementIterator, RcElement, WeakElement,
+    Text, TextIterator,
+    Node, RcNode,
+};
+pub use error::BuildError;
 
 pub use xml::EventReader;
 pub use xml::attribute::OwnedAttribute;
