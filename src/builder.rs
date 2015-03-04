@@ -37,7 +37,7 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
                     Some (_) => {
                         match curr {
                             // this should never happen
-                            None => return Err(BuildError::BuildError),
+                            None => return Err(BuildError::Unreachable),
                             Some(parent) => {
                                 // create the element with the parent as a weak reference
                                 let elem = Element::new(parent.clone().downgrade(), name, attributes, namespace);
@@ -58,7 +58,7 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
             XmlEvent::EndElement { name: _ } => {
                 match curr {
                     // this should never happen
-                    None => return Err(BuildError::BuildError),
+                    None => return Err(BuildError::UnexpectedEvent),
                     Some(elem) => {
                         // move out of the element by setting the current
                         // element to the parent of the element we're
@@ -68,15 +68,15 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
                             None => {
                                 // check if root is valid
                                 match root {
-                                    None => return Err(BuildError::BuildError),
-                                    Some(ref tmp_root) => {
-                                        curr = Some(tmp_root.clone());
+                                    None => return Err(BuildError::Unreachable),
+                                    Some(ref root) => {
+                                        curr = Some(root.clone());
                                     }
                                 }
                             }
                             Some(ref parent) => {
-                                // TODO unwrap
-                                curr = Some(parent.clone().upgrade().unwrap());
+                                curr = Some(parent.clone().upgrade()
+                                    .expect("Unable to upgrade WeakReference, parent was dropped."));
                             }
                         }
                     }
@@ -86,7 +86,7 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
             XmlEvent::CData(content) | XmlEvent::Characters(content) => {
                 match curr {
                     // this should never happen
-                    None => return Err(BuildError::BuildError),
+                    None => return Err(BuildError::UnexpectedEvent),
                     Some(ref parent) => {
                         // create the text node with the parent as a weak reference
                         let text = Text::new(parent.clone().downgrade(), content);
@@ -106,9 +106,14 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
         }
     }
 
-    Ok(Document {
-        version: doc_version,
-        encoding: doc_encoding,
-        root: root.unwrap().clone(),
-    })
+    match root {
+        None => Err(BuildError::UndefinedRoot),
+        Some (root) => {
+            Ok(Document {
+                version: doc_version,
+                encoding: doc_encoding,
+                root: root.clone(),
+            })
+        }
+    }
 }

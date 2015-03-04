@@ -4,7 +4,9 @@ use std::fmt;
 use xml::common::Error as ParserError;
 
 pub enum BuildError {
-    BuildError,
+    UndefinedRoot,
+    Unreachable,
+    UnexpectedEvent,
     ParserError(ParserError),
 }
 
@@ -20,7 +22,9 @@ impl fmt::Display for BuildError {
 
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            BuildError::BuildError => write!(f, "Unexpected end"),
+            BuildError::UndefinedRoot => write!(f, "Undefined root element"),
+            BuildError::Unreachable => write!(f, "Logic error in algorithm"),
+            BuildError::UnexpectedEvent => write!(f, "Unexpected event"),
             BuildError::ParserError(ref err) => err.fmt(f),
         }
     }
