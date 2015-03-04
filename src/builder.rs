@@ -1,6 +1,6 @@
 use std::old_io::Buffer;
 
-use dom::{Document, Element, Text, Node, RcNode_new, RcElement, RcElement_new};
+use dom::{Document, Element, Text, Node, rc_node_new, RcElement, rc_element_new};
 use error::BuildError;
 
 use xml::common::XmlVersion;
@@ -28,7 +28,7 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
                     // Also sets the current element to the root.
                     None => {
                         let elem = Element::new_root(name, attributes, namespace);
-                        let rcelem = RcElement_new(elem);
+                        let rcelem = rc_element_new(elem);
                         root = Some(rcelem.clone());
                         curr = Some(rcelem.clone());
                     }
@@ -41,10 +41,10 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
                             Some(parent) => {
                                 // create the element with the parent as a weak reference
                                 let elem = Element::new(parent.clone().downgrade(), name, attributes, namespace);
-                                let rcelem = RcElement_new(elem);
+                                let rcelem = rc_element_new(elem);
                                 // create a node from the element
                                 let node = Node::Element(rcelem.clone());
-                                let rcnode = RcNode_new(node);
+                                let rcnode = rc_node_new(node);
                                 // add the element to the parent
                                 parent.borrow_mut().add_child(rcnode);
                                 // move into the new element
@@ -91,7 +91,7 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
                         // create the text node with the parent as a weak reference
                         let text = Text::new(parent.clone().downgrade(), content);
                         let node = Node::Text(text);
-                        let rcnode = RcNode_new(node);
+                        let rcnode = rc_node_new(node);
                         // add the text node to the parent
                         parent.borrow_mut().add_child(rcnode.clone());
                     }
