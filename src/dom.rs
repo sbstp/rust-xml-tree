@@ -1,5 +1,7 @@
 use std::cell::RefCell;
+use std::iter::Iterator;
 use std::rc::{Rc, Weak};
+use std::slice::Iter;
 
 use xml::attribute::OwnedAttribute;
 use xml::common::XmlVersion;
@@ -77,8 +79,69 @@ impl Element {
         self.children.push(node);
     }
 
+    /// Return the number of child nodes.
+    pub fn len(&self) -> usize {
+        self.children.len()
+    }
+
+    /// Find children by name.
+    pub fn find(&self, name: &str) -> Vec<RcElement> {
+        self.iter_elements().filter(|elem| {
+            elem.borrow().name.borrow().local_name == name
+        }).collect()
+    }
+
+    /// Get the text nodes of this Element concatenated.
+    pub fn text(&self) -> String {
+        let mut buf = String::new();
+        for text in self.iter_text() {
+            buf.push_str(text.as_slice());
+        }
+        buf
+    }
+
+    /// Create an iterator that only yields Node::Element node types.
+    pub fn iter_elements(&self) -> ElementIterator {
+        ElementIterator { source: Box::new(self.children.iter()) }
+    }
+
+    // Create an iterator that only yields Node::Text node types.
+    pub fn iter_text(&self) -> TextIterator {
+        TextIterator { source: Box::new(self.children.iter()) }
+    }
+
+    // TODO name/namespacing
+    // pub fn find<'a>(&'a self, name: &str) -> Vec<RcElement> {
+    //     self.iter_elements().filter(|&elem| elem.name.borrow().local_name == name).collect()
+    // }
+
 }
 
+/// Iterator for element nodes.
+pub struct ElementIterator<'a> {
+    source: Box<Iter<'a, RcNode>>,
+}
+
+impl<'a> Iterator for ElementIterator<'a> {
+
+    type Item = RcElement;
+
+    fn next(&mut self) -> Option<RcElement> {
+        loop {
+            let it = self.source.next();
+            match it {
+                None => return None,
+                Some(node) => {
+                    match *node.borrow() {
+                        Node::Text(_) => continue,
+                        Node::Element(ref elem) => return Some(elem.clone()),
+                    }
+                }
+            }
+        }
+    }
+
+}
 /// Describes a text node of the DOM tree.
 pub struct Text {
     /// parent element
@@ -98,6 +161,33 @@ impl Text {
 
 }
 
+/// Iterator for text nodes.
+pub struct TextIterator<'a> {
+    source: Box<Iter<'a, RcNode>>,
+}
+
+impl<'a> Iterator for TextIterator<'a> {
+
+    type Item = String;
+
+    fn next(&mut self) -> Option<String> {
+        loop {
+            let it = self.source.next();
+            match it {
+                None => return None,
+                Some(node) => {
+                    match *node.borrow() {
+                        Node::Element(_) => continue,
+                        // TODO cloning the string is not ideal here.
+                        Node::Text(ref text) => return Some(text.content.clone()),
+                    }
+                }
+            }
+        }
+    }
+
+}
+
 /// Describes a node of the XML tree.
 /// The node can be an element or a text node.
 pub enum Node {
@@ -108,78 +198,82 @@ pub enum Node {
 #[cfg(test)]
 mod tests {
 
-    // use std::old_io::{Buffer, MemReader};
-    //
-    // use {build, Document, Element, ElementIterator};
-    //
-    // use xml::EventReader;
-    // use xml::common::XmlVersion;
-    //
-    // fn xml_to_doc(text: &str) -> Document {
-    //     let mut reader = EventReader::new(MemReader::new(text.as_bytes().to_vec()));
-    //     let res = build(&mut reader);
-    //     match res {
-    //         Ok(doc) => doc,
-    //         Err(err) => panic!("Error: {}", err),
-    //     }
-    // }
-    //
-    // #[test]
-    // fn test_find() {
-    //     let xml = "<root><item>aa</item><item>bb</item><item>cc</item><notitem></notitem></root>";
-    //     let doc = xml_to_doc(xml);
-    //
-    //     let elems = doc.root.find("item");
-    //     assert_eq!(elems.len(), 3);
-    // }
-    //
-    // #[test]
-    // fn test_text_simple() {
-    //     let xml = "<root>abc</root>";
-    //     let doc = xml_to_doc(xml);
-    //
-    //     assert_eq!(doc.root.text(), "abc");
-    // }
-    //
-    // #[test]
-    // fn test_test_complex() {
-    //     let xml = "<root>abc<sep></sep>def</root>";
-    //     let doc = xml_to_doc(xml);
-    //
-    //     assert_eq!(doc.root.text(), "abcdef");
-    // }
-    //
-    // #[test]
-    // fn test_iter_elements() {
-    //     let xml = "<root>abc<sep></sep>def<oy></oy></root>";
-    //     let doc = xml_to_doc(xml);
-    //
-    //     let it: ElementIterator = doc.root.iter_elements();
-    //     let v: Vec<&Element> = it.collect();
-    //
-    //     assert_eq!(doc.root.len(), 4);
-    //     assert_eq!(v.len(), 2);
-    // }
-    //
-    // #[test]
-    // fn test_iter_text() {
-    //     let xml = "<root>abc<sep></sep>def<oy></oy></root>";
-    //     let doc = xml_to_doc(xml);
-    //
-    //     let it = doc.root.iter_text();
-    //     let v: Vec<&str> = it.collect();
-    //
-    //     assert_eq!(doc.root.len(), 4);
-    //     assert_eq!(v.len(), 2);
-    // }
-    //
-    // #[test]
-    // fn test_version_encoding() {
-    //     let xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><item></item></root>";
-    //     let doc = xml_to_doc(xml);
-    //
-    //     assert!(doc.version == Some(XmlVersion::Version10));
-    //     assert_eq!(doc.encoding, Some("UTF-8".to_string()));
-    // }
+    use std::old_io::{MemReader};
+
+    use builder::build;
+    use super::{Document, RcElement};
+
+    use xml::EventReader;
+    use xml::common::XmlVersion;
+
+    fn xml_to_doc(text: &str) -> Document {
+        let mut reader = EventReader::new(MemReader::new(text.as_bytes().to_vec()));
+        let res = build(&mut reader);
+        match res {
+            Ok(doc) => doc,
+            Err(err) => panic!("Error: {}", err),
+        }
+    }
+
+    #[test]
+    fn test_find() {
+        let xml = "<root><item>aa</item><item>bb</item><item>cc</item><notitem></notitem></root>";
+        let doc = xml_to_doc(xml);
+        let root = doc.root.borrow();
+
+        let elems = root.find("item");
+        assert_eq!(elems.len(), 3);
+    }
+
+    #[test]
+    fn test_text_simple() {
+        let xml = "<root>abc</root>";
+        let doc = xml_to_doc(xml);
+
+        assert_eq!(doc.root.borrow().text(), "abc");
+    }
+
+    #[test]
+    fn test_test_complex() {
+        let xml = "<root>abc<sep></sep>def</root>";
+        let doc = xml_to_doc(xml);
+
+        assert_eq!(doc.root.borrow().text(), "abcdef");
+    }
+
+    #[test]
+    fn test_iter_elements() {
+        let xml = "<root>abc<sep></sep>def<oy></oy></root>";
+        let doc = xml_to_doc(xml);
+        let root = doc.root.borrow();
+
+        let it = root.iter_elements();
+        let v: Vec<RcElement> = it.collect();
+
+        assert_eq!(root.len(), 4);
+        assert_eq!(v.len(), 2);
+    }
+
+    #[test]
+    fn test_iter_text() {
+        let xml = "<root>abc<sep></sep>def<oy></oy></root>";
+        let doc = xml_to_doc(xml);
+        let root = doc.root.borrow();
+
+        let it = root.iter_text();
+        let v: Vec<String> = it.collect();
+
+        assert_eq!(root.len(), 4);
+        assert_eq!(v.len(), 2);
+    }
+
+    #[test]
+    fn test_version_encoding() {
+        let xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><item></item></root>";
+        let doc = xml_to_doc(xml);
+
+        assert!(doc.version == Some(XmlVersion::Version10));
+        assert_eq!(doc.encoding, Some("UTF-8".to_string()));
+    }
 
 }
