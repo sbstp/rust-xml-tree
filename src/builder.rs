@@ -20,10 +20,6 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
                 doc_version = Some(version);
                 doc_encoding = Some(encoding);
             }
-            // EndDocument
-            XmlEvent::EndDocument => {
-                // TODO
-            }
             // StartElement
             XmlEvent::StartElement { name, attributes, namespace } => {
                 // Check if a root exists.
