@@ -36,8 +36,8 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
                     // to the current element.
                     Some (_) => {
                         match curr {
-                            // this should never happen
-                            None => return Err(BuildError::Unreachable),
+                            // This should never happen.
+                            None => panic!("Root is set but current is not."),
                             Some(parent) => {
                                 // create the element with the parent as a weak reference
                                 let elem = Element::new(parent.clone().downgrade(), name, attributes, namespace);
@@ -57,8 +57,8 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
             // EndElement
             XmlEvent::EndElement { name: _ } => {
                 match curr {
-                    // this should never happen
-                    None => return Err(BuildError::UnexpectedEvent),
+                    // This should never happen.
+                    None => panic!("End element before start element."),
                     Some(elem) => {
                         // move out of the element by setting the current
                         // element to the parent of the element we're
@@ -68,7 +68,8 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
                             None => {
                                 // check if root is valid
                                 match root {
-                                    None => return Err(BuildError::Unreachable),
+                                    // This should never happen.
+                                    None => panic!("End element without any root."),
                                     Some(ref root) => {
                                         curr = Some(root.clone());
                                     }
@@ -85,8 +86,8 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
             // Cdata or Characters
             XmlEvent::CData(content) | XmlEvent::Characters(content) => {
                 match curr {
-                    // this should never happen
-                    None => return Err(BuildError::UnexpectedEvent),
+                    // This should never happen.
+                    None => panic!("Text node before any element."),
                     Some(ref parent) => {
                         // create the text node with the parent as a weak reference
                         let text = Text::new(parent.clone().downgrade(), content);
