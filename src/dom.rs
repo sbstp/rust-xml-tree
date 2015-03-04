@@ -85,6 +85,8 @@ impl Element {
     }
 
     /// Find children by name.
+    /// Currently ignores namespaces.
+    // TODO namespacing
     pub fn find(&self, name: &str) -> Vec<RcElement> {
         self.iter_elements().filter(|elem| {
             elem.borrow().name.borrow().local_name == name
@@ -109,11 +111,6 @@ impl Element {
     pub fn iter_text(&self) -> TextIterator {
         TextIterator { source: Box::new(self.children.iter()) }
     }
-
-    // TODO name/namespacing
-    // pub fn find<'a>(&'a self, name: &str) -> Vec<RcElement> {
-    //     self.iter_elements().filter(|&elem| elem.name.borrow().local_name == name).collect()
-    // }
 
 }
 
