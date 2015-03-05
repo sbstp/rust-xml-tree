@@ -14,7 +14,7 @@ fn main() {
     match res {
         Err(ref err) => println!("{}", err),
         Ok(ref doc) => {
-            println!("{}", doc.root.borrow().name);
+            println!("{}", doc);
         }
     }
 }

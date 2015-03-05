@@ -1,9 +1,10 @@
 use std::cell::RefCell;
+use std::fmt;
 use std::iter::Iterator;
 use std::rc::{Rc, Weak};
 use std::slice::Iter;
 
-use dom::{Node, RcNode, TextIterator};
+use dom::{self, Node, RcNode, TextIterator};
 
 use xml::attribute::OwnedAttribute;
 use xml::name::OwnedName;
@@ -56,7 +57,7 @@ impl Element {
 
     /// Find children by name.
     /// Currently ignores namespaces.
-    // TODO namespacing
+    // TODO namespace
     pub fn find(&self, name: &str) -> Vec<RcElement> {
         self.iter_elements().filter(|elem| {
             elem.borrow().name.borrow().local_name == name
@@ -72,14 +73,57 @@ impl Element {
         buf
     }
 
-    /// Create an iterator that only yields Node::Element node types.
-    pub fn iter_elements(&self) -> ElementIterator {
-        ElementIterator { source: Box::new(self.children.iter()) }
+    /// Create an iterator that yield all children nodes.
+    pub fn iter<'a>(&'a self) -> Iter<'a, RcNode> {
+        self.children.iter()
     }
 
-    // Create an iterator that only yields Node::Text node types.
+    /// Create an iterator that only yields Node::Element node types.
+    pub fn iter_elements(&self) -> ElementIterator {
+        ElementIterator { source: Box::new(self.iter()) }
+    }
+
+    /// Create an iterator that only yields Node::Text node types.
     pub fn iter_text(&self) -> TextIterator {
-        TextIterator::new(Box::new(self.children.iter()))
+        TextIterator::new(Box::new(self.iter()))
+    }
+
+    /// Format the Element in a pretty way.
+    pub fn format_pretty<W: fmt::Write>(&self, w: &mut W, indent: usize, inc: usize) -> fmt::Result {
+        let name = self.name.borrow().local_name; // TODO namespace
+        let padding = dom::util::padding(indent, inc);
+
+        try!(write!(w, "{}<{}>\n", padding, name));
+        for child in self.iter() {
+            try!(child.borrow().format_pretty(w, indent + 1, inc))
+        }
+        try!(write!(w, "{}</{}>\n", padding, name));
+
+        Ok(())
+    }
+
+}
+
+impl fmt::Debug for Element {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut buf = String::new();
+        try!(self.format_pretty(&mut buf, 0, 2));
+        f.write_str(buf.as_slice())
+    }
+
+}
+
+impl fmt::Display for Element {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let name = self.name.borrow().local_name;
+        try!(write!(f, "<{}>", name));
+        for child in self.iter() {
+            try!(child.borrow().fmt(f));
+        }
+        try!(write!(f, "</{}>", name));
+        Ok(())
     }
 
 }

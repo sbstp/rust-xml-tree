@@ -7,6 +7,7 @@ mod document;
 mod element;
 mod node;
 mod text;
+mod util;
 
 #[cfg(test)]
 mod tests {

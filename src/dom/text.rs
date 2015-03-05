@@ -1,7 +1,8 @@
+use std::fmt;
 use std::iter::Iterator;
 use std::slice::Iter;
 
-use dom::{Node, RcNode, WeakElement};
+use dom::{self, Node, RcNode, WeakElement};
 
 /// Describes a text node of the DOM tree.
 pub struct Text {
@@ -18,6 +19,31 @@ impl Text {
             parent: parent,
             content: content,
         }
+    }
+
+    /// Format the Element in a pretty way.
+    pub fn format_pretty<W: fmt::Write>(&self, w: &mut W, indent: usize, inc: usize) -> fmt::Result {
+        let padding = dom::util::padding(indent, inc);
+        try!(write!(w, "{}{}\n", padding, self.content));
+        Ok(())
+    }
+
+}
+
+impl fmt::Debug for Text {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut buf = String::new();
+        try!(self.format_pretty(&mut buf, 0, 2));
+        f.write_str(buf.as_slice())
+    }
+
+}
+
+impl fmt::Display for Text {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.content)
     }
 
 }
