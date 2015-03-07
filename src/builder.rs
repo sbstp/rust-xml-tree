@@ -7,6 +7,15 @@ use xml::common::XmlVersion;
 use xml::reader::EventReader;
 use xml::reader::events::XmlEvent;
 
+/// `build` creates a `Document` from an `EventReader`.
+///
+/// `build` iterates through the events yielded by the provided `EventReader`.
+/// This allows you to configure the `EvenReader` as you desire. It will create
+/// a reference counted DOM that you can then manipulate. The builder will return
+/// a `BuildError` if the source document is invalid of if it is empty.
+///
+/// The builder should not panic. It should only panic in case of an impossible
+/// scenario. Please report any panics.
 pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildError> {
     let mut root: Option<RcElement> = None;
     let mut curr: Option<RcElement> = None;

@@ -3,8 +3,11 @@ use std::fmt;
 
 use xml::common::Error as ParserError;
 
+/// An error that occurs trying to build a `Document`.
 pub enum BuildError {
+    /// There was no root element. (empty source document).
     UndefinedRoot,
+    /// A parser error, see `xml::common::error`.
     ParserError(ParserError),
 }
 
