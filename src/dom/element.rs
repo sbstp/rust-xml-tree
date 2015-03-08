@@ -46,6 +46,18 @@ impl Element {
         }
     }
 
+    /// Try to get the parent element.
+    /// Returns `None` if the parent is `None`
+    /// or if the upgrade from `Weak` to `Rc` fails.
+    pub fn get_parent(&self) -> Option<RcElement> {
+        match self.parent {
+            None => None,
+            Some(ref parent) => {
+                parent.clone().upgrade()
+            }
+        }
+    }
+
     pub fn add_child(&mut self, node: RcNode) {
         self.children.push(node);
     }

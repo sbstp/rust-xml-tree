@@ -4,7 +4,7 @@ use std::iter::Iterator;
 use std::rc::Rc;
 use std::slice::Iter;
 
-use dom::{self, Node, RcNode, WeakElement};
+use dom::{self, Node, RcNode, RcElement, WeakElement};
 
 /// Describes a text node of the DOM tree.
 pub struct Text {
@@ -21,6 +21,12 @@ impl Text {
             parent: parent,
             content: content,
         }
+    }
+
+    /// Try and get the parent element.
+    /// Returns `None` if the upgrade from `Weak` to `Rc` fails.
+    pub fn get_parent(&self) -> Option<RcElement> {
+        self.parent.clone().upgrade()
     }
 
     /// Format the Element in a pretty way.
@@ -77,7 +83,6 @@ impl<'a> Iterator for TextIterator<'a> {
                 Some(node) => {
                     match *node.borrow() {
                         Node::Element(_) => continue,
-                        // TODO cloning the string is not ideal here.
                         Node::Text(ref text) => return Some(text.clone()),
                     }
                 }

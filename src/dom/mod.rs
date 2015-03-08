@@ -90,4 +90,15 @@ mod tests {
         assert_eq!(doc.encoding, Some("UTF-8".to_string()));
     }
 
+    #[test]
+    fn test_get_parent() {
+        let xml = "<root><item></item><item></item></root>";
+        let doc = xml_to_doc(xml);
+        let root = doc.root.borrow();
+
+        for child in root.find("item").iter() {
+            assert!(child.borrow().get_parent().is_some());
+        }
+    }
+
 }

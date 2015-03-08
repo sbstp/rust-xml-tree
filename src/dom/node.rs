@@ -14,6 +14,16 @@ pub enum Node {
 
 impl Node {
 
+    /// Try to get the parent element.
+    /// Returns `None` if the parent is `None`
+    /// or if the upgrade from `Weak` to `Rc` fails.
+    pub fn get_parent(&self) -> Option<RcElement> {
+        match *self {
+            Node::Element(ref elem) => elem.borrow().get_parent(),
+            Node::Text(ref text) => text.borrow().get_parent(),
+        }
+    }
+
     /// Format the Element in a pretty way.
     pub fn format_pretty<W: fmt::Write>(&self, w: &mut W, indent: usize, inc: usize) -> fmt::Result {
         match *self {
