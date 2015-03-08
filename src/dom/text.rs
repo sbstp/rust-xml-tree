@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::fmt;
 use std::iter::Iterator;
+use std::rc::Rc;
 use std::slice::Iter;
 
 use dom::{self, Node, RcNode, WeakElement};
@@ -65,9 +67,9 @@ impl<'a> TextIterator<'a> {
 
 impl<'a> Iterator for TextIterator<'a> {
 
-    type Item = String;
+    type Item = RcText;
 
-    fn next(&mut self) -> Option<String> {
+    fn next(&mut self) -> Option<RcText> {
         loop {
             let it = self.source.next();
             match it {
@@ -76,11 +78,19 @@ impl<'a> Iterator for TextIterator<'a> {
                     match *node.borrow() {
                         Node::Element(_) => continue,
                         // TODO cloning the string is not ideal here.
-                        Node::Text(ref text) => return Some(text.content.clone()),
+                        Node::Text(ref text) => return Some(text.clone()),
                     }
                 }
             }
         }
     }
 
+}
+
+/// A text node with shared ownership.
+pub type RcText = Rc<RefCell<Text>>;
+
+/// Handy constructor for RcText.
+pub fn rc_text_new(text: Text) -> RcText {
+    Rc::new(RefCell::new(text))
 }

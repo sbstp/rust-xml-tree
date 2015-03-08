@@ -1,7 +1,7 @@
 pub use self::document::Document;
 pub use self::element::{Element, ElementIterator, RcElement, WeakElement, rc_element_new};
 pub use self::node::{Node, RcNode, rc_node_new};
-pub use self::text::{Text, TextIterator};
+pub use self::text::{Text, TextIterator, RcText, rc_text_new};
 
 mod document;
 mod element;
@@ -15,7 +15,7 @@ mod tests {
     use std::old_io::{MemReader};
 
     use builder::build;
-    use super::{Document, RcElement};
+    use super::{Document, RcElement, RcText};
 
     use xml::EventReader;
     use xml::common::XmlVersion;
@@ -75,7 +75,7 @@ mod tests {
         let root = doc.root.borrow();
 
         let it = root.iter_text();
-        let v: Vec<String> = it.collect();
+        let v: Vec<RcText> = it.collect();
 
         assert_eq!(root.len(), 4);
         assert_eq!(v.len(), 2);

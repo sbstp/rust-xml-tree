@@ -68,7 +68,7 @@ impl Element {
     pub fn text(&self) -> String {
         let mut buf = String::new();
         for text in self.iter_text() {
-            buf.push_str(text.as_slice());
+            buf.push_str(text.borrow().content.as_slice());
         }
         buf
     }

@@ -1,6 +1,6 @@
 use std::old_io::Buffer;
 
-use dom::{Document, Element, Text, Node, rc_node_new, RcElement, rc_element_new};
+use dom::{Document, Element, Text, Node, rc_node_new, RcElement, rc_element_new, rc_text_new};
 use error::BuildError;
 
 use xml::common::XmlVersion;
@@ -100,7 +100,9 @@ pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildEr
                     Some(ref parent) => {
                         // create the text node with the parent as a weak reference
                         let text = Text::new(parent.clone().downgrade(), content);
-                        let node = Node::Text(text);
+                        let rctext = rc_text_new(text);
+                        // create wrapper node
+                        let node = Node::Text(rctext);
                         let rcnode = rc_node_new(node);
                         // add the text node to the parent
                         parent.borrow_mut().add_child(rcnode.clone());

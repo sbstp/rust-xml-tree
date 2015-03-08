@@ -3,13 +3,13 @@ use std::fmt;
 use std::rc::Rc;
 
 use dom::element::RcElement;
-use dom::text::Text;
+use dom::text::RcText;
 
 /// Describes a node of the XML tree.
 /// The node can be an element or a text node.
 pub enum Node {
     Element(RcElement),
-    Text(Text),
+    Text(RcText),
 }
 
 impl Node {
@@ -18,7 +18,7 @@ impl Node {
     pub fn format_pretty<W: fmt::Write>(&self, w: &mut W, indent: usize, inc: usize) -> fmt::Result {
         match *self {
             Node::Element(ref elem) => elem.borrow().format_pretty(w, indent, inc),
-            Node::Text(ref text) => text.format_pretty(w, indent, inc),
+            Node::Text(ref text) => text.borrow().format_pretty(w, indent, inc),
         }
     }
 
@@ -29,7 +29,7 @@ impl fmt::Debug for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Node::Element(ref elem) => elem.borrow().fmt(f),
-            Node::Text(ref elem) => elem.fmt(f),
+            Node::Text(ref elem) => elem.borrow().fmt(f),
         }
     }
 
@@ -40,7 +40,7 @@ impl fmt::Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Node::Element(ref elem) => elem.borrow().fmt(f),
-            Node::Text(ref elem) => elem.fmt(f),
+            Node::Text(ref elem) => elem.borrow().fmt(f),
         }
     }
 
