@@ -43,7 +43,7 @@ impl fmt::Debug for Text {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut buf = String::new();
         try!(self.format_pretty(&mut buf, 0, 2));
-        f.write_str(buf.as_slice())
+        f.write_str(buf.as_str())
     }
 
 }

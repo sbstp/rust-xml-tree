@@ -80,7 +80,7 @@ impl Element {
     pub fn text(&self) -> String {
         let mut buf = String::new();
         for text in self.iter_text() {
-            buf.push_str(text.borrow().content.as_slice());
+            buf.push_str(text.borrow().content.as_str());
         }
         buf
     }
@@ -121,7 +121,7 @@ impl fmt::Debug for Element {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut buf = String::new();
         try!(self.format_pretty(&mut buf, 0, 2));
-        f.write_str(buf.as_slice())
+        f.write_str(buf.as_str())
     }
 
 }
