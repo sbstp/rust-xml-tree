@@ -1,4 +1,4 @@
-#![feature(alloc, core, old_io)]
+#![feature(convert,rc_weak)]
 
 extern crate xml;
 
