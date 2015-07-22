@@ -11,9 +11,6 @@ mod util;
 
 #[cfg(test)]
 mod tests {
-
-    use std::old_io::{MemReader};
-
     use builder::build;
     use super::{Document, RcElement, RcText};
 
@@ -21,7 +18,7 @@ mod tests {
     use xml::common::XmlVersion;
 
     fn xml_to_doc(text: &str) -> Document {
-        let mut reader = EventReader::new(MemReader::new(text.as_bytes().to_vec()));
+        let mut reader = EventReader::new(text.as_bytes());
         let res = build(&mut reader);
         match res {
             Ok(doc) => doc,

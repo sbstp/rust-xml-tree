@@ -1,15 +1,11 @@
-#![feature(old_io, old_path)]
-
 extern crate xml_tree;
 
-use std::old_io::{BufferedReader, File};
-
+use std::fs::File;
 use xml_tree::{build, EventReader};
 
 fn main() {
-    let file = File::open(&Path::new("data/ex1.xml")).unwrap();
-    let reader = BufferedReader::new(file);
-    let mut parser = EventReader::new(reader);
+    let file = File::open("data/ex1.xml").unwrap();
+    let mut parser = EventReader::new(file);
     let res = build(&mut parser);
     match res {
         Err(ref err) => println!("{}", err),
