@@ -1,4 +1,4 @@
-use std::old_io::Buffer;
+use std::io::Read;
 
 use dom::{Document, Element, Text, Node, rc_node_new, RcElement, rc_element_new, rc_text_new};
 use error::BuildError;
@@ -16,7 +16,7 @@ use xml::reader::events::XmlEvent;
 ///
 /// The builder should not panic. It should only panic in case of an impossible
 /// scenario. Please report any panics.
-pub fn build<B: Buffer>(reader: &mut EventReader<B>) -> Result<Document, BuildError> {
+pub fn build<B: Read>(reader: &mut EventReader<B>) -> Result<Document, BuildError> {
     let mut root: Option<RcElement> = None;
     let mut curr: Option<RcElement> = None;
     let mut doc_version: Option<XmlVersion> = None;

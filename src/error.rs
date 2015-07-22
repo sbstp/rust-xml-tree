@@ -1,9 +1,10 @@
-use std::error;
 use std::fmt;
+use std::convert;
 
 use xml::common::Error as ParserError;
 
 /// An error that occurs trying to build a `Document`.
+#[derive(Debug)]
 pub enum BuildError {
     /// There was no root element. (empty source document).
     UndefinedRoot,
@@ -11,12 +12,10 @@ pub enum BuildError {
     ParserError(ParserError),
 }
 
-impl error::FromError<ParserError> for BuildError {
-
-    fn from_error(err: ParserError) -> BuildError {
+impl convert::From<ParserError> for BuildError {
+    fn from(err: ParserError) -> Self {
         BuildError::ParserError(err)
     }
-
 }
 
 impl fmt::Display for BuildError {
